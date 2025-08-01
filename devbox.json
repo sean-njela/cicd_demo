@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.15.0/.schema/devbox.schema.json",
+  "packages": [
+    "chromedriver@138.0",
+    "python@3.10",
+    "go-task@3.44",
+    "gitflow@1.12",
+    "poetry@2.1",
+    "openjdk11@latest",
+    "gradle@7.0",
+    "pipenv@2025"
+  ],
+  "shell": {
+    "init_hook": [
+      "source ~/.aliases"
+    ],
+    "scripts": {
+      "test": [
+        "echo \"Error: no test specified\" && exit 1"
+      ]
+    }
+  }
+}

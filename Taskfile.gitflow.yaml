@@ -1,0 +1,604 @@
+version: "3"
+
+vars:
+  MAIN_BRANCH: main
+  DEV_BRANCH: develop
+
+tasks:
+  # default:
+  #   desc: "📋 List all tasks"
+  #   cmds:
+  #     - task --list-all
+
+  commit:
+    desc: '📝 Add and commit changes -> task commit msg="your commit message"'
+    cmds:
+      - |
+        git status
+        git add .
+        git commit -m "{{.msg}}"
+        git status
+    requires:
+      vars:
+        - msg
+
+  init:
+    desc: "⚙️ Initialize Git Flow with 'main' and 'develop'"
+    preconditions:
+      - sh: "[ -d .git ]"
+        msg: "❌ Not a Git repository. Run 'git init' first."
+      # - sh: "! git config --get gitflow.branch.master >/dev/null 2>&1"
+      #   msg: "✅ Git Flow is already configured."
+    cmds:
+      - |
+        echo "🚀 Initializing Git Flow..."
+
+        # Create branches if missing
+        git show-ref --quiet refs/heads/{{.MAIN_BRANCH}} || git checkout -b {{.MAIN_BRANCH}}
+        git show-ref --quiet refs/heads/{{.DEV_BRANCH}} || git checkout -b {{.DEV_BRANCH}}
+
+        # Set Git Flow config
+        git config gitflow.branch.master {{.MAIN_BRANCH}}
+        git config gitflow.branch.develop {{.DEV_BRANCH}}
+        git config gitflow.prefix.feature feature/
+        git config gitflow.prefix.bugfix bugfix/
+        git config gitflow.prefix.release release/
+        git config gitflow.prefix.hotfix hotfix/
+        git config gitflow.prefix.support support/
+        git config gitflow.prefix.versiontag ""
+
+        # Final init
+        git flow init -d
+
+        # Push branches
+        git fetch --all --prune
+        git push -u origin {{.MAIN_BRANCH}} || true
+        git push -u origin {{.DEV_BRANCH}} || true
+
+        # Create gh-pages branch if it doesn't exist
+        if ! git show-ref --quiet refs/remotes/origin/gh-pages; then
+          echo "🌐 Creating gh-pages branch..."
+          git checkout --orphan gh-pages
+          git reset --hard
+          echo "# GitHub Pages" > README.md
+          git add README.md
+          git commit -m "🧾 Initial commit for GitHub Pages branch"
+          git push -u origin gh-pages
+          git checkout {{.DEV_BRANCH}}  # Go back to working branch
+          echo "✅ gh-pages branch initialized and pushed."
+        else
+          echo "✅ gh-pages branch already exists remotely."
+        fi
+
+        echo "✅ Git Flow setup completed."
+
+  sync:
+    desc: "🔄 Sync current branch with latest 'develop' and handle main updates"
+    cmds:
+      - |
+        echo "🔁 Syncing..."
+        # Check if we're in detached HEAD state
+        if git symbolic-ref -q HEAD >/dev/null; then
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        else
+          echo "⚠️ Detected detached HEAD state. Creating temporary branch..."
+          CURRENT_BRANCH="temp-sync-$(date +%s)"
+          git checkout -b "$CURRENT_BRANCH"
+          echo "Created temporary branch: $CURRENT_BRANCH"
+        fi
+
+        # Save any uncommitted changes
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+          echo "💾 Stashing uncommitted changes..."
+          git stash push -m "Auto-stash before sync $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          STASHED=true
+        else
+          STASHED=false
+        fi
+
+        git fetch origin
+
+        # Handle develop branch with potential main updates
+        echo "🔄 Checking develop branch..."
+        git checkout {{.DEV_BRANCH}}
+
+        # Check for ArgoCD-specific files in remote changes
+        ARGOCD_FILES=$(git diff --name-only {{.DEV_BRANCH}} origin/{{.DEV_BRANCH}} | grep -E '\.argocd-source-.*\.yaml$' || echo "")
+        if [ -n "$ARGOCD_FILES" ]; then
+          echo "📌 Detected ArgoCD-generated files in remote changes:"
+          echo "$ARGOCD_FILES"
+        fi
+
+        if git merge-base --is-ancestor {{.DEV_BRANCH}} origin/{{.DEV_BRANCH}}; then
+          # Local develop is behind or equal to remote - safe to pull
+          git pull origin {{.DEV_BRANCH}}
+        else
+          # Branches have diverged - try to merge remote changes
+          echo "⚠️ Develop has diverged from remote. Attempting to merge updates..."
+
+          # Try to auto-resolve ArgoCD file conflicts by taking remote version
+          if [ -n "$ARGOCD_FILES" ]; then
+            echo "🔧 Auto-resolving ArgoCD files by taking remote version..."
+            for file in $ARGOCD_FILES; do
+              git checkout --theirs "$file" 2>/dev/null || true
+              git add "$file" 2>/dev/null || true
+            done
+          fi
+
+          git pull --no-edit origin {{.DEV_BRANCH}} || {
+            echo "❌ Auto-merge failed. Resolve conflicts manually:"
+            echo "   1. Fix conflicts"
+            echo "   2. git add ."
+            echo "   3. git commit -m 'Merge main updates'"
+            echo "   4. Run 'task sync' again"
+            exit 1
+          }
+          echo "✅ Successfully merged main updates into develop"
+        fi
+
+        # Return to original branch and merge develop
+        git checkout $CURRENT_BRANCH
+        git merge --no-ff {{.DEV_BRANCH}} -m "Sync with develop $(date -u +%Y-%m-%dT%H:%M:%SZ)" || {
+          echo "❌ Failed to merge develop into $CURRENT_BRANCH. Resolve conflicts manually:"
+          echo "   1. Fix conflicts"
+          echo "   2. git add ."
+          echo "   3. git commit -m 'Merge develop'"
+          echo "   4. Run 'task sync' again"
+          exit 1
+        }
+
+        # Handle main branch with potential ArgoCD updates
+        echo "🔄 Checking main branch..."
+        git checkout {{.MAIN_BRANCH}}
+
+        # Check for ArgoCD-specific files in remote changes
+        ARGOCD_FILES=$(git diff --name-only {{.MAIN_BRANCH}} origin/{{.MAIN_BRANCH}} | grep -E '\.argocd-source-.*\.yaml$' || echo "")
+        if [ -n "$ARGOCD_FILES" ]; then
+          echo "📌 Detected ArgoCD-generated files in remote changes:"
+          echo "$ARGOCD_FILES"
+        fi
+
+        if git merge-base --is-ancestor {{.MAIN_BRANCH}} origin/{{.MAIN_BRANCH}}; then
+          # Local main is behind or equal to remote - safe to pull
+          git pull origin {{.MAIN_BRANCH}}
+        else
+          # Branches have diverged - try to merge remote changes
+          echo "⚠️ Main has diverged from remote. Attempting to merge main updates..."
+
+          # Try to auto-resolve ArgoCD file conflicts by taking remote version
+          if [ -n "$ARGOCD_FILES" ]; then
+            echo "🔧 Auto-resolving ArgoCD files by taking remote version..."
+            for file in $ARGOCD_FILES; do
+              git checkout --theirs "$file" 2>/dev/null || true
+              git add "$file" 2>/dev/null || true
+            done
+          fi
+
+          git pull --no-edit origin {{.MAIN_BRANCH}} || {
+            echo "❌ Auto-merge failed. Resolve conflicts manually:"
+            echo "   1. Fix conflicts"
+            echo "   2. git add ."
+            echo "   3. git commit -m 'Merge main updates'"
+            echo "   4. Run 'task sync' again"
+            exit 1
+          }
+          echo "✅ Successfully merged main updates into main"
+        fi
+
+        # Return to original branch
+        git checkout $CURRENT_BRANCH
+
+        # Restore stashed changes if any
+        if [ "$STASHED" = true ]; then
+          echo "💾 Restoring stashed changes..."
+          git stash pop || {
+            echo "⚠️ Conflicts while restoring stashed changes. Please resolve manually."
+            echo "Your stashed changes are still in the stash. Use 'git stash list' and 'git stash apply' to recover."
+          }
+        fi
+
+        echo "✅ Synced with develop and main, handling any main updates"
+
+  feature:start:
+    desc: "🚀 Start a new feature from 'develop' -> task feature:start name=login-form"
+    cmds:
+      - |
+        name=$(echo "{{.name}}" | tr '[:upper:]' '[:lower:]')
+        echo "🚧 Starting feature/$name..."
+        git checkout {{.DEV_BRANCH}}
+        git pull --ff-only origin {{.DEV_BRANCH}} || (echo "❌ Cannot fast-forward develop. Resolve manually." && exit 1)
+        git flow feature start "$name"
+    requires:
+      vars:
+        - name
+
+  feature:push:
+    desc: "🚀 Push current feature to origin"
+    cmds:
+      - git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)
+
+  feature:clean:
+    desc: "🧹 Delete the current local feature branch after PR merge"
+    cmds:
+      - |
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        if [[ "$CURRENT_BRANCH" != feature/* ]]; then
+          echo "❌ Not on a feature branch. Aborting."
+          exit 1
+        fi
+        echo "Cleaning up feature branch: $CURRENT_BRANCH"
+        git checkout develop
+        git pull origin develop
+        git branch -D "$CURRENT_BRANCH" || echo "⚠️  Branch '$CURRENT_BRANCH' could not be deleted."
+        git fetch origin --prune
+
+  release:start:
+    desc: "🚀 Start a new release from develop -> task release:start version=1.2.0"
+    cmds:
+      - |
+        version=$(echo "{{.version}}" | tr '[:upper:]' '[:lower:]')
+        git checkout {{.DEV_BRANCH}}
+        git pull --ff-only origin {{.DEV_BRANCH}} || (echo "❌ Develop has diverged. Resolve manually." && exit 1)
+        git flow release start "$version"
+    requires:
+      vars:
+        - version
+
+  release:verify:
+    desc: "✅ Verifies and prepares 'main' and 'develop' for release -> task release:verify version=1.2.3"
+    cmds:
+      - |
+        version=$(echo "{{.version}}" | tr '[:upper:]' '[:lower:]')
+
+        echo "🔍 Checking for preconditions before release:finish..."
+        git fetch origin
+
+        # Check and fix main branch
+        git checkout main
+        if ! git merge-base --is-ancestor main origin/main; then
+          echo "⚠️ Your local main is not up-to-date with origin/main. Attempting to merge..."
+          git pull --no-edit origin main || {
+            echo "❌ Auto-merge failed. Please resolve conflicts manually:"
+            echo "   1. Fix conflicts"
+            echo "   2. git add ."
+            echo "   3. git commit -m 'Merge main updates before release'"
+            echo "   4. Run 'task release:verify version=$version' again"
+            exit 1
+          }
+          echo "✅ Successfully merged remote changes into main"
+        else
+          # Even if main is an ancestor, still pull to make sure we're up to date
+          git pull origin main
+        fi
+
+        # Check and fix develop branch
+        git checkout develop
+        if ! git merge-base --is-ancestor develop origin/develop; then
+          echo "⚠️ Your local develop is not up-to-date with origin/develop. Attempting to merge..."
+          git pull --no-edit origin develop || {
+            echo "❌ Auto-merge failed. Please resolve conflicts manually:"
+            echo "   1. Fix conflicts"
+            echo "   2. git add ."
+            echo "   3. git commit -m 'Merge main updates before release'"
+            echo "   4. Run 'task release:verify version=$version' again"
+            exit 1
+          }
+          echo "✅ Successfully merged remote changes into develop"
+        else
+          # Even if develop is an ancestor, still pull to make sure we're up to date
+          git pull origin develop
+        fi
+
+        echo "✅ 'main' and 'develop' are now prepared for release:finish"
+    requires:
+      vars:
+        - version
+
+  release:repair:
+    desc: "🛠️ Repairs a broken release:finish (after a failed conflict) -> task release:repair version=1.2.3"
+    cmds:
+      - |
+        version=$(echo "{{.version}}" | tr '[:upper:]' '[:lower:]')
+        echo "🛠 Repairing release/$version..."
+
+        echo "➡️  Step 1: Checkout main and resolve any conflicts manually."
+        git checkout main
+        git fetch origin
+
+        # Check if main has diverged from origin/main
+        if ! git merge-base --is-ancestor main origin/main || ! git merge-base --is-ancestor origin/main main; then
+          echo "⚠️ Main has diverged from origin/main. Attempting to merge..."
+          git pull --no-edit origin main || {
+            echo "❌ Auto-merge failed. Please resolve conflicts manually."
+            git status
+            echo ""
+            echo "⚠️  If you see 'Unmerged paths':"
+            echo "   1. Open the conflicted files"
+            echo "   2. Fix the conflicts"
+            echo "   3. Run: git add ."
+            echo "   4. Run: git commit -m 'Resolve release conflict'"
+            echo ""
+            echo "Then run 'task release:repair version=$version' again"
+            exit 1
+          }
+        fi
+
+        echo "➡️  Step 2: Back-merge main into develop"
+        git checkout develop
+        git fetch origin
+
+        # Check if develop has diverged from origin/develop
+        if ! git merge-base --is-ancestor develop origin/develop || ! git merge-base --is-ancestor origin/develop develop; then
+          echo "⚠️ Develop has diverged from origin/develop. Attempting to merge..."
+          git pull --no-edit origin develop || {
+            echo "❌ Auto-merge failed. Please resolve conflicts manually."
+            git status
+            echo ""
+            echo "⚠️  If you see 'Unmerged paths':"
+            echo "   1. Open the conflicted files"
+            echo "   2. Fix the conflicts"
+            echo "   3. Run: git add ."
+            echo "   4. Run: git commit -m 'Resolve develop conflict'"
+            echo ""
+            echo "Then run 'task release:repair version=$version' again"
+            exit 1
+          }
+        fi
+
+        # Merge main into develop
+        git merge main -m "Merge main after release $version" || {
+          echo "❌ Auto-merge failed. Please resolve conflicts manually."
+          git status
+          echo ""
+          echo "⚠️  If you see 'Unmerged paths':"
+          echo "   1. Open the conflicted files"
+          echo "   2. Fix the conflicts"
+          echo "   3. Run: git add ."
+          echo "   4. Run: git commit -m 'Merge main into develop after release $version'"
+          echo ""
+          echo "Then run 'task release:repair version=$version' again"
+          exit 1
+        }
+
+        echo "➡️  Step 3: Push branches and tags with force-with-lease for safety"
+        # Use force-with-lease for safety (prevents overwriting others' work)
+
+        # Safer push to main with retry mechanism
+        MAX_RETRIES=3
+        RETRY_COUNT=0
+        PUSH_SUCCESS=false
+
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$PUSH_SUCCESS" != "true" ]; do
+          git fetch origin main
+          git push --force-with-lease origin main && PUSH_SUCCESS=true || {
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⚠️ Push to main failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+              git pull --rebase origin main || {
+                echo "❌ Rebase failed. Resolving conflicts is required."
+                echo "   1. Fix conflicts"
+                echo "   2. git add ."
+                echo "   3. git rebase --continue"
+                echo "   4. Run 'task release:repair version=$version' again"
+                exit 1
+              }
+            else
+              echo "❌ Push to main failed after $MAX_RETRIES attempts."
+              echo "Try: git checkout main && git pull --rebase origin main"
+              exit 1
+            fi
+          }
+        done
+
+        # Safer push to develop with retry mechanism
+        RETRY_COUNT=0
+        PUSH_SUCCESS=false
+
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$PUSH_SUCCESS" != "true" ]; do
+          git checkout develop
+          git fetch origin develop
+          git push --force-with-lease origin develop && PUSH_SUCCESS=true || {
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⚠️ Push to develop failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+              git pull --rebase origin develop || {
+                echo "❌ Rebase failed. Resolving conflicts is required."
+                echo "   1. Fix conflicts"
+                echo "   2. git add ."
+                echo "   3. git rebase --continue"
+                echo "   4. Run 'task release:repair version=$version' again"
+                exit 1
+              }
+            else
+              echo "❌ Push to develop failed after $MAX_RETRIES attempts."
+              echo "Try: git checkout develop && git pull --rebase origin develop"
+              exit 1
+            fi
+          }
+        done
+
+        git push --tags
+
+        echo "✅ Recovered and pushed release $version"
+    requires:
+      vars:
+        - version
+
+  release:finish:
+    desc: "🏁 Finishes and publishes a release (merges, tags, pushes). -> task release:finish version=1.2.0"
+    deps:
+      - task: release:verify
+        vars: { version: "{{.version}}" }
+    cmds:
+      - |
+        version=$(echo "{{.version}}" | tr '[:upper:]' '[:lower:]')
+        echo "🏁 Finishing release $version..."
+
+        # Ensure we're on the release branch
+        RELEASE_BRANCH="release/$version"
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+        if [ "$CURRENT_BRANCH" != "$RELEASE_BRANCH" ]; then
+          echo "⚠️ Not on release branch. Switching to $RELEASE_BRANCH..."
+          git checkout "$RELEASE_BRANCH" || {
+            echo "❌ Failed to switch to release branch. Does it exist?"
+            echo "Run 'task release:start version=$version' first."
+            exit 1
+          }
+        fi
+
+        # Attempt to finish the release with proper error handling
+        git flow release finish -m "Release $version" "$version" || {
+          echo "❌ Failed to finish release. There may be conflicts to resolve."
+          echo "Run 'task release:repair version=$version' to fix and complete the release."
+          exit 1
+        }
+
+        # Push changes with force-with-lease for safety
+        echo "🚀 Pushing changes to remote..."
+
+        # Safer push to main with retry mechanism
+        MAX_RETRIES=3
+        RETRY_COUNT=0
+        PUSH_SUCCESS=false
+
+        git checkout {{.MAIN_BRANCH}}
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$PUSH_SUCCESS" != "true" ]; do
+          git fetch origin {{.MAIN_BRANCH}}
+          git push --force-with-lease origin {{.MAIN_BRANCH}} && PUSH_SUCCESS=true || {
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⚠️ Push to {{.MAIN_BRANCH}} failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+              git pull --rebase origin {{.MAIN_BRANCH}} || {
+                echo "❌ Rebase failed. Run 'task release:repair version=$version' to fix."
+                exit 1
+              }
+            else
+              echo "❌ Push to {{.MAIN_BRANCH}} failed after $MAX_RETRIES attempts."
+              echo "Run 'task release:repair version=$version' to fix."
+              exit 1
+            fi
+          }
+        done
+
+        # Safer push to develop with retry mechanism
+        RETRY_COUNT=0
+        PUSH_SUCCESS=false
+
+        git checkout {{.DEV_BRANCH}}
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$PUSH_SUCCESS" != "true" ]; do
+          git fetch origin {{.DEV_BRANCH}}
+          git push --force-with-lease origin {{.DEV_BRANCH}} && PUSH_SUCCESS=true || {
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⚠️ Push to {{.DEV_BRANCH}} failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+              git pull --rebase origin {{.DEV_BRANCH}} || {
+                echo "❌ Rebase failed. Run 'task release:repair version=$version' to fix."
+                exit 1
+              }
+            else
+              echo "❌ Push to {{.DEV_BRANCH}} failed after $MAX_RETRIES attempts."
+              echo "Run 'task release:repair version=$version' to fix."
+              exit 1
+            fi
+          }
+        done
+
+        git push --tags
+
+        # Update documentation
+        echo "📚 Updating documentation..."
+        poetry run mike deploy --push --update-aliases "$version" latest || echo "⚠️ Documentation update failed, but release was successful."
+        git push origin gh-pages || echo "⚠️ Failed to push documentation, but release was successful."
+        poetry run mike set-default latest --push || echo "⚠️ Failed to set default documentation version, but release was successful."
+
+        echo "✅ Release $version completed successfully!"
+    requires:
+      vars:
+        - version
+
+  hotfix:start:
+    desc: "🔥 Start a hotfix from main -> task hotfix:start version=1.2.1"
+    preconditions:
+      # Check if we're on a clean branch
+      - sh: git diff --quiet && git diff --staged --quiet
+        msg: "❌ You have uncommitted changes. Please commit or stash them first."
+      # Check if develop branch is in sync with remote
+      - sh: 'git fetch origin {{.DEV_BRANCH}} && [ "$(git rev-parse {{.DEV_BRANCH}})" = "$(git rev-parse origin/{{.DEV_BRANCH}})" ] || [ ! -z "$(git branch --list {{.DEV_BRANCH}})" ]'
+        msg: "❌ Your local '{{.DEV_BRANCH}}' branch has diverged from 'origin/{{.DEV_BRANCH}}'. Please sync it first with 'task sync'."
+      # Check if main branch is in sync with remote
+      - sh: 'git fetch origin {{.MAIN_BRANCH}} && [ "$(git rev-parse {{.MAIN_BRANCH}})" = "$(git rev-parse origin/{{.MAIN_BRANCH}})" ] || [ ! -z "$(git branch --list {{.MAIN_BRANCH}})" ]'
+        msg: "❌ Your local '{{.MAIN_BRANCH}}' branch has diverged from 'origin/{{.MAIN_BRANCH}}'. Please fix this first."
+      # Check if hotfix branch already exists
+      - sh: '[ -z "$(git branch --list hotfix/{{.version}})" ]'
+        msg: "❌ Hotfix branch 'hotfix/{{.version}}' already exists. Please use a different version."
+    cmds:
+      - |
+        version=$(echo "{{.version}}" | tr '[:upper:]' '[:lower:]')
+        echo "🔥 Starting hotfix v$version from {{.MAIN_BRANCH}}..."
+        git checkout {{.MAIN_BRANCH}}
+        git pull origin {{.MAIN_BRANCH}} || (echo "❌ Pull failed. Resolve diverged main." && exit 1)
+        git flow hotfix start "$version" || (echo "❌ Failed to start hotfix. See error above." && exit 1)
+        echo "✅ Hotfix branch 'hotfix/$version' created. Make your changes and then run 'task hotfix:finish version=$version'."
+    requires:
+      vars:
+        - version
+
+  hotfix:finish:
+    desc: "🏁 Finish hotfix, tag and merge -> task hotfix:finish version=1.2.1"
+    preconditions:
+      # Check if we're on the correct hotfix branch
+      - sh: 'git rev-parse --abbrev-ref HEAD | grep -q "^hotfix/{{.version}}$"'
+        msg: "❌ You must be on the 'hotfix/{{.version}}' branch to finish it. Current branch: $(git rev-parse --abbrev-ref HEAD)"
+      # Check if the branch is clean
+      - sh: git diff --quiet && git diff --staged --quiet
+        msg: "❌ You have uncommitted changes. Please commit them first."
+      # Check if both target branches exist and are up-to-date
+      - sh: 'git fetch origin && git branch -a | grep -q "remotes/origin/{{.MAIN_BRANCH}}"'
+        msg: "❌ Remote '{{.MAIN_BRANCH}}' branch not found. Please check your repository setup."
+      - sh: 'git fetch origin && git branch -a | grep -q "remotes/origin/{{.DEV_BRANCH}}"'
+        msg: "❌ Remote '{{.DEV_BRANCH}}' branch not found. Please check your repository setup."
+    cmds:
+      - |
+        version=$(echo "{{.version}}" | tr '[:upper:]' '[:lower:]')
+        echo "🏁 Finishing hotfix v$version..."
+
+        # Fetch latest from remote to ensure we're up-to-date
+        git fetch origin
+
+        # Finish the hotfix with proper error handling
+        git flow hotfix finish -m "Hotfix v$version" "$version" || {
+          echo "❌ Failed to finish hotfix. Resolving conflicts may be required."
+          echo "👉 If there are conflicts, resolve them and then run:"
+          echo "   git flow hotfix finish '$version'"
+          exit 1
+        }
+
+        # Push changes to remote branches and tags
+        echo "🚀 Pushing changes to remote..."
+        git push origin {{.MAIN_BRANCH}} || (echo "❌ Failed to push to {{.MAIN_BRANCH}}. Please push manually." && exit 1)
+        git push origin {{.DEV_BRANCH}} || (echo "❌ Failed to push to {{.DEV_BRANCH}}. Please push manually." && exit 1)
+        git push --tags || (echo "❌ Failed to push tags. Please push manually." && exit 1)
+
+        poetry run mike deploy --push --update-aliases "{{.version}}" latest
+        poetry run mike set-default latest --push
+
+        echo "✅ Hotfix v$version completed successfully!"
+    requires:
+      vars:
+        - version
+
+  clean:branches:
+    desc: "🧼 Delete all local feature, release, hotfix branches (after merge)"
+    cmds:
+      - |
+        echo "🧹 Cleaning up local branches..."
+        for b in $(git branch | grep -E 'feature/|release/|hotfix/' | sed 's/\*//'); do
+          git branch -d $b || echo "⚠️ Could not delete $b (maybe not merged?)"
+        done
+
+  rm-cached:
+    desc: "🧹 Remove cached files"
+    cmds:
+      - |
+        git rm --cached -r .

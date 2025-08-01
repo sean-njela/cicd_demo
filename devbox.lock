@@ -1,0 +1,332 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "chromedriver@138.0": {
+      "last_modified": "2025-07-24T15:00:16Z",
+      "resolved": "github:NixOS/nixpkgs/b74a30dbc0a72e20df07d43109339f780b439291#chromedriver",
+      "source": "devbox-search",
+      "version": "138.0.7204.169",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/h3gv14kp1cm2ckzxk3l7kczi24d8frw3-chromedriver-138.0.7204.169",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/h3gv14kp1cm2ckzxk3l7kczi24d8frw3-chromedriver-138.0.7204.169"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/i9qj06gcwwjh5z2yjv7hvfsgh31bjsn2-chromedriver-138.0.7204.169",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/i9qj06gcwwjh5z2yjv7hvfsgh31bjsn2-chromedriver-138.0.7204.169"
+        }
+      }
+    },
+    "gitflow@1.12": {
+      "last_modified": "2025-07-13T22:45:35Z",
+      "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#gitflow",
+      "source": "devbox-search",
+      "version": "1.12.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/fhvgc2n5nh2vd9kybwvvpv94zrkxv6zj-gitflow-1.12.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/fhvgc2n5nh2vd9kybwvvpv94zrkxv6zj-gitflow-1.12.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/99w2nrk5vlcdmn5bcxglsr87ssl3xp5v-gitflow-1.12.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/99w2nrk5vlcdmn5bcxglsr87ssl3xp5v-gitflow-1.12.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/izpnc0v6g5j17s6xkq1m3x3h0k0c1hz1-gitflow-1.12.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/izpnc0v6g5j17s6xkq1m3x3h0k0c1hz1-gitflow-1.12.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/w76wy7a56j4y67b4i1x1q3vglhgv0b4r-gitflow-1.12.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/w76wy7a56j4y67b4i1x1q3vglhgv0b4r-gitflow-1.12.3"
+        }
+      }
+    },
+    "github:NixOS/nixpkgs/nixpkgs-unstable": {
+      "last_modified": "2025-07-28T17:09:23Z",
+      "resolved": "github:NixOS/nixpkgs/648f70160c03151bc2121d179291337ad6bc564b?lastModified=1753722563&narHash=sha256-FK8iq76wlacriq3u0kFCehsRYTAqjA9nfprpiSWRWIc%3D"
+    },
+    "go-task@3.44": {
+      "last_modified": "2025-07-13T22:45:35Z",
+      "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#go-task",
+      "source": "devbox-search",
+      "version": "3.44.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xf4c3z2n3g8j41bh9s0l2pjv4fahdmab-go-task-3.44.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xf4c3z2n3g8j41bh9s0l2pjv4fahdmab-go-task-3.44.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hziv622f7xw9swigq3ylw1lj49dgr4d2-go-task-3.44.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/hziv622f7xw9swigq3ylw1lj49dgr4d2-go-task-3.44.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/aafqxhbxvy73v1gpwnnc8bs5icm6nlcg-go-task-3.44.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/aafqxhbxvy73v1gpwnnc8bs5icm6nlcg-go-task-3.44.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/yvpnz39r66qr57m41c3dfyc3b7mi8y9i-go-task-3.44.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/yvpnz39r66qr57m41c3dfyc3b7mi8y9i-go-task-3.44.0"
+        }
+      }
+    },
+    "gradle@7.0": {
+      "last_modified": "2021-07-05T19:22:21Z",
+      "plugin_version": "0.0.1",
+      "resolved": "github:NixOS/nixpkgs/3e0ce8c5d478d06b37a4faa7a4cc8642c6bb97de#gradle",
+      "source": "devbox-search",
+      "version": "7.0"
+    },
+    "openjdk11@latest": {
+      "last_modified": "2023-02-24T09:01:09Z",
+      "resolved": "github:NixOS/nixpkgs/7d0ed7f2e5aea07ab22ccb338d27fbe347ed2f11#openjdk11",
+      "source": "devbox-search",
+      "version": "11.0.17+8"
+    },
+    "pipenv@2025": {
+      "last_modified": "2025-07-13T22:45:35Z",
+      "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#pipenv",
+      "source": "devbox-search",
+      "version": "2025.0.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/r7h57jrda26xyb1g3g2nbl0h00za2yg4-pipenv-2025.0.3",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/xw9rnw4sxad2c7cfa7s6sm09934n5hs6-pipenv-2025.0.3-dist"
+            }
+          ],
+          "store_path": "/nix/store/r7h57jrda26xyb1g3g2nbl0h00za2yg4-pipenv-2025.0.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/jgibmzkxwr9ds0i8ms8nmpvqjsgcyfmh-pipenv-2025.0.3",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/f8gg4hxh4q5r3pvymb3xpp2r88y5ijrp-pipenv-2025.0.3-dist"
+            }
+          ],
+          "store_path": "/nix/store/jgibmzkxwr9ds0i8ms8nmpvqjsgcyfmh-pipenv-2025.0.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/y6hjxjf3w4a5fm5pdasmz10dhn0l84vp-pipenv-2025.0.3",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/zr123q9w6gp9b4f7vfyxqayjdphb584j-pipenv-2025.0.3-dist"
+            }
+          ],
+          "store_path": "/nix/store/y6hjxjf3w4a5fm5pdasmz10dhn0l84vp-pipenv-2025.0.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/wh4hwjrkip77pnm5yb61wqiqys73vb2r-pipenv-2025.0.3",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/kx3ranycccwnnwm7y3c7caqiyqbjdrxa-pipenv-2025.0.3-dist"
+            }
+          ],
+          "store_path": "/nix/store/wh4hwjrkip77pnm5yb61wqiqys73vb2r-pipenv-2025.0.3"
+        }
+      }
+    },
+    "poetry@2.1": {
+      "last_modified": "2025-07-17T10:11:59Z",
+      "plugin_version": "0.0.4",
+      "resolved": "github:NixOS/nixpkgs/fa0ef8a6bb1651aa26c939aeb51b5f499e86b0ec#poetry",
+      "source": "devbox-search",
+      "version": "2.1.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/pnp8sxd8nhnkms5k8shy02ylvb06prjn-python3.13-poetry-2.1.3",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/xac5q3c552fh7hw7h3hrw73yqvc8vr8g-python3.13-poetry-2.1.3-dist"
+            }
+          ],
+          "store_path": "/nix/store/pnp8sxd8nhnkms5k8shy02ylvb06prjn-python3.13-poetry-2.1.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/djkvbgm4x8dxicmdin3lifvlxpnvlmn7-python3.13-poetry-2.1.3",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/c8siygc9s572lpz1ys7wv20bkzi1rnqb-python3.13-poetry-2.1.3-dist"
+            }
+          ],
+          "store_path": "/nix/store/djkvbgm4x8dxicmdin3lifvlxpnvlmn7-python3.13-poetry-2.1.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3dn5r4j8xsnxnb3vjs6gfsclp6sia4f3-python3.13-poetry-2.1.3",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/pimv85ra7l7sv1f52w0d4km6i7sgax03-python3.13-poetry-2.1.3-dist"
+            }
+          ],
+          "store_path": "/nix/store/3dn5r4j8xsnxnb3vjs6gfsclp6sia4f3-python3.13-poetry-2.1.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/f20v6y7pndsvj6bqpck98kbr3ajj0wjc-python3.13-poetry-2.1.3",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/52rdwhvvxg0gav6d6hl64mmip5lqrh5d-python3.13-poetry-2.1.3-dist"
+            }
+          ],
+          "store_path": "/nix/store/f20v6y7pndsvj6bqpck98kbr3ajj0wjc-python3.13-poetry-2.1.3"
+        }
+      }
+    },
+    "python@3.10": {
+      "last_modified": "2025-07-13T22:45:35Z",
+      "plugin_version": "0.0.4",
+      "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#python310",
+      "source": "devbox-search",
+      "version": "3.10.18",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/6jjmyqg9fifixf6vjn9y035ry6b25jri-python3-3.10.18",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/6jjmyqg9fifixf6vjn9y035ry6b25jri-python3-3.10.18"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/470jaaj596rnanc1ncihhjxwj8lcjg6g-python3-3.10.18",
+              "default": true
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/a6h62f9z2rp5wj2647qd3zdm9f8yrz80-python3-3.10.18-debug"
+            }
+          ],
+          "store_path": "/nix/store/470jaaj596rnanc1ncihhjxwj8lcjg6g-python3-3.10.18"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/vr9vxyczaq2gjhf10gn9x1hizqqzx5s4-python3-3.10.18",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/vr9vxyczaq2gjhf10gn9x1hizqqzx5s4-python3-3.10.18"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/30z1i1ys8jsqrs0b65g0j5phayr9bhcl-python3-3.10.18",
+              "default": true
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/gmi76h2iidz1n15fyj4fij4nx3jvw1mz-python3-3.10.18-debug"
+            }
+          ],
+          "store_path": "/nix/store/30z1i1ys8jsqrs0b65g0j5phayr9bhcl-python3-3.10.18"
+        }
+      }
+    }
+  }
+}
