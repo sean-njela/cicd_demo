@@ -81,11 +81,18 @@ tasks:
 # ─── Setup Task ──────────────────────────────────────────────────────────────
   setup:
     desc: "⚙️ Setup environment: install dependencies, generate config etc."
+    cmds:
+      - pipenv install
+
 
 
 # ─── Development Task ────────────────────────────────────────────────────────
   dev:
     desc: "🏗️ Provision and start local development environment"
+    cmds:
+      - ./gradlew check
+      - ./gradlew apprun
+      - echo "head to http://localhost:8080/demo"
 
 
 # ─── Production Task ─────────────────────────────────────────────────────────
@@ -136,3 +143,10 @@ tasks:
       - ./gradlew --stop
       - ./gradlew clean
       - rm -rf build/ .gradle/ ~/.gradle/caches/
+
+
+  test-all:
+    desc: "Run all tests"
+    cmds:
+      - task: gradle-clean
+      - ./gradlew runAllTests

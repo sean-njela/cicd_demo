@@ -1,0 +1,88 @@
+name: STAGING
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+
+  ##################
+  # 🚀 STAGING     #
+  ##################
+
+  staging-tests:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.read-tag.outputs.tag }}
+
+    steps:
+      - name: ✅ Checkout Code
+        uses: actions/checkout@v4
+
+      ##################################################
+      # ♻️ Cache Test Dependencies (generic placeholder)
+      ##################################################
+
+      - name: ♻️ Cache test dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache
+            ~/.tooling-cache
+          key: ${{ runner.os }}-test-tools-${{ hashFiles('**/package-lock.json', '**/requirements.txt', '**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-test-tools-
+
+      - name: 📥 Download image tag artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-tag
+
+      - name: 🧾 Read image tag
+        id: read-tag
+        run: |
+          TAG=$(cat image_tag.txt)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: 📥 Pull Published Image
+        run: |
+          echo "Pulling image: your-org/your-app:${{ steps.read-tag.outputs.tag }}"
+          docker pull your-org/your-app:${{ steps.read-tag.outputs.tag }}
+
+      ###########################################
+      # 🧪 Run tests in Kubernetes via kubectl
+      ###########################################
+
+      - name: 🔧 Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: 🔁 Run E2E Tests in Kubernetes
+        run: |
+          kubectl run e2e-tests \
+            --image=your-org/your-app:${{ steps.read-tag.outputs.tag }} \
+            --restart=Never \
+            --rm \
+            --env="ENV=staging" \
+            -- /bin/sh -c "npm run test:e2e || exit 1"
+
+      - name: ✅ Functional / Acceptance Tests
+        run: |
+          echo "Run acceptance tests via k8s, or attach to deployed services"
+
+      - name: ⚡ Performance / Load Testing
+        run: |
+          echo "Run load testing tools (e.g., k6) against staging endpoints"
+
+      - name: 🔒 DAST (Dynamic App Sec Testing)
+        run: |
+          echo "Run security tools (e.g., OWASP ZAP CLI) against staging service"
+
+      - name: 📋 Upload Summary
+        run: |
+          echo "### Promoted Docker Tag" >> $GITHUB_STEP_SUMMARY
+          echo "\`${{ steps.read-tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY

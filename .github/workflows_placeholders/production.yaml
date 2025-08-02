@@ -1,0 +1,61 @@
+name: PRODUCTION
+
+on:
+  workflow_run:
+    workflows: ["STAGING"]
+    types:
+      - completed
+
+jobs:
+
+  #####################
+  # 🚢 PRODUCTION     #
+  #####################
+
+  deploy-prod:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://your-production-dashboard.example.com  # Optional
+    steps:
+      - name: ✅ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download image tag artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-tag
+
+      - name: 🧾 Read image tag
+        id: read-tag
+        run: |
+          TAG=$(cat image_tag.txt)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: 🏷️ Tag Docker image as 'prod'
+        run: |
+          echo "Tagging image as 'prod' and pushing..."
+          docker pull your-org/your-app:${{ steps.read-tag.outputs.tag }}
+          docker tag your-org/your-app:${{ steps.read-tag.outputs.tag }} your-org/your-app:prod
+          docker push your-org/your-app:prod
+
+      - name: 🚀 Deploy to Production
+        run: |
+          echo "Deploying image your-org/your-app:prod to production"
+          # Example:
+          # kubectl set image deployment/my-app my-app=your-org/your-app:prod
+
+      - name: 🩺 Post-Deployment Verification
+        run: |
+          echo "Checking health of deployed application..."
+          # curl -f https://your-prod-url/health || exit 1
+
+      - name: 📢 Notifications & Reporting
+        run: |
+          echo "Notify stakeholders of successful production release"
+          # Slack, Teams, email, etc.
+
+      - name: 🧹 Cleanup & Teardown
+        run: |
+          echo "Clean up any temporary deployment state"

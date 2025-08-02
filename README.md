@@ -8,7 +8,7 @@ documentation_ ... but that doesn't mean we can't have pretty good documentation
 
 * Install [Java](https://www.java.com/en/download/) if you don't already have it.
 * Clone or [download](https://github.com/7ep/demo/archive/master.zip) this repo.  (if you download, unzip the file to a directory.)
-* On the command line in the top directory of this repo, run `gradlew apprun`
+* On the command line in the top directory of this repo, run `./gradlew apprun`
 * Visit the application with your browser at http://localhost:8080/demo
 
 #### Summary:
